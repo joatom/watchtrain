@@ -1,8 +1,8 @@
 from fastapi import WebSocket
 
-from app.topics.pc import PC
-from app.topics.producer import Producer
-from app.topics.consumer import Consumer
+from app.topics.agent import Agent
+from app.topics.producer_agent import ProducerAgent
+from app.topics.consumer_agent import ConsumerAgent
             
 class Topic():
 
@@ -14,19 +14,19 @@ class Topic():
         self.producer_manager = _ConnectionManager()
         self.consumer_manager = _ConnectionManager()
     
-    async def connect(self, pc):
+    async def connect(self, agent):
         
-        if isinstance(pc, Producer):
-            await self.producer_manager.connect(pc)
+        if isinstance(agent, ProducerAgent):
+            await self.producer_manager.connect(agent)
         else:
-            await self.consumer_manager.connect(pc)
+            await self.consumer_manager.connect(agent)
 
-    def disconnect(self, pc):
+    def disconnect(self, agent):
         
-        if isinstance(pc, Producer):
-            self.producer_manager.disconnect(pc)
+        if isinstance(agent, ProducerAgent):
+            self.producer_manager.disconnect(agent)
         else:
-            self.consumer_manager.disconnect(pc)
+            self.consumer_manager.disconnect(agent)
 
    
             
@@ -38,14 +38,14 @@ class _ConnectionManager:
     """
     
     def __init__(self):
-        self.active_connections: List[PC] = []
+        self.active_connections: List[Agent] = []
 
-    async def connect(self, pc: PC):
-        await pc.websocket.accept()        
-        self.active_connections.append(pc)
+    async def connect(self, agent: Agent):
+        await agent.websocket.accept()        
+        self.active_connections.append(agent)
         
-    def disconnect(self, pc: PC):
-        self.active_connections.remove(pc)
+    def disconnect(self, agent: Agent):
+        self.active_connections.remove(agent)
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)

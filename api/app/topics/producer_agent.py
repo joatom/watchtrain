@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from fastapi import WebSocket
 
-from app.topics.pc import PC
+from app.topics.agent import Agent
 
-class Producer(PC):
+class ProducerAgent(Agent):
     
     @abstractmethod
     def handle_request(self, data):

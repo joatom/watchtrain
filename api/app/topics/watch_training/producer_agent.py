@@ -1,20 +1,20 @@
-from app.topics.producer import Producer
+from app.topics.producer_agent import ProducerAgent
 from fastapi import WebSocket
 from app.topics.watch_training.topic import WatchTrainingTopic
 import json
 
-class TrainDataProducer(Producer):
+class TrainDataProducerAgent(ProducerAgent):
     
     async def handle_request(self, data, topic: WatchTrainingTopic):
         
         data = json.loads(data)
         
-        print('producer', data)
+        print(f'producer #{self.client_id}: {data}')
         
         if data['action'] == 'Requesting training_id':
             
             topic.new_training()
-            await self.websocket.send_text(f"{topic.latest_training_id}")
+            await self.websocket.send_text(json.dumps({'training_id': topic.latest_training_id}))
             await topic.consumer_manager.broadcast(f'New Training with ID {topic.latest_training_id} just started ...', verbose = 1)
             
         if data['action'] == 'training stats':
@@ -27,10 +27,13 @@ class TrainDataProducer(Producer):
                 topic.trainings[int(data['training_id'])].add_stats(data['payload'])                
                 
             #await self.websocket.send_text(f"recieved the data")
-            await topic.consumer_manager.broadcast(data['training_id'], verbose = 1)
+            await topic.consumer_manager.broadcast(json.dumps({'training_id': data['training_id']}), verbose = 1)
             await topic.consumer_manager.broadcast(json.dumps(data['payload']), verbose = 1) #topic.trainings[int(data['training_id'])].stats.to_string())
 
     
         if data['action'] == 'training progress':
             await topic.consumer_manager.broadcast(json.dumps(data), verbose = 0)
-            
+        
+        if data['action'] == 'debug':
+            await topic.consumer_manager.broadcast(json.dumps(data), verbose = 1)
+         

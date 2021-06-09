@@ -1,16 +1,16 @@
 from fastapi import WebSocket
-from app.topics.consumer import Consumer
+from app.topics.consumer_agent import ConsumerAgent
 from app.topics.watch_training.topic import WatchTrainingTopic
 
-class VerboseConsumer(Consumer):
+class VerboseConsumerAgent(ConsumerAgent):
     
     async def handle_request(self, data, topic: WatchTrainingTopic):
         
-        print('consumer', data)
+        print(f'consumer #{self.client_id}: {data}')
         
         await self.websocket.send_text(data)
 
-class WatchConsumer(Consumer):
+class WatchConsumerAgent(ConsumerAgent):
     
     async def handle_request(self, data, topic: WatchTrainingTopic):
         print('WatConcn')

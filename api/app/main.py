@@ -7,8 +7,8 @@ import time
 
 import app.topics.topic as tp
 import app.topics.watch_training.topic as wt_topic
-from app.topics.watch_training.producer import TrainDataProducer
-from app.topics.watch_training.consumer import VerboseConsumer
+from app.topics.watch_training.producer_agent import TrainDataProducerAgent
+from app.topics.watch_training.consumer_agent import VerboseConsumerAgent
 
 app = FastAPI()
 
@@ -109,11 +109,11 @@ async def get(topic_name: str):
     return summary
 
 
-@app.websocket("/ws/{topic_name}/{pc}/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, topic_name: str, pc: str, client_id: int):
+@app.websocket("/ws/{topic_name}/{agent}/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, topic_name: str, agent: str, client_id: int):
     global topic
     
-    assert pc in ['producer', 'consumer']
+    assert agent in ['producer', 'consumer']
     
     if topic_name == 'watchtrain':
         
@@ -122,24 +122,24 @@ async def websocket_endpoint(websocket: WebSocket, topic_name: str, pc: str, cli
             topic[topic_name] = wt_topic.WatchTrainingTopic()
         
         # register producer or consumer
-        if pc == 'producer':
-            pc = TrainDataProducer(websocket)
+        if agent == 'producer':
+            agent = TrainDataProducerAgent(websocket, client_id)
         else:
-            pc = VerboseConsumer(websocket, verbose = 1)            
+            agent = VerboseConsumerAgent(websocket, client_id, verbose = 1)            
         
         # connect
-        await topic[topic_name].connect(pc)
+        await topic[topic_name].connect(agent)
 
         # handle incoming data
         try:
             while True:
                 data = await websocket.receive_text()
 
-                await pc.handle_request(data, topic[topic_name])
+                await agent.handle_request(data, topic[topic_name])
 
         except WebSocketDisconnect:
             # disconnect
-            topic[topic_name].disconnect(pc)
+            topic[topic_name].disconnect(agent)
 
     else:
         raise ValueError(f'Topic *{topic_name}* not implemented')
