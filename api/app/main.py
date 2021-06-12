@@ -8,7 +8,7 @@ import time
 import app.topics.topic as tp
 import app.topics.watch_training.topic as wt_topic
 from app.topics.watch_training.producer_agent import TrainDataProducerAgent
-from app.topics.watch_training.consumer_agent import VerboseConsumerAgent
+from app.topics.watch_training.consumer_agent import VerboseConsumerAgent, WatchConsumerAgent
 
 app = FastAPI()
 
@@ -55,17 +55,25 @@ html = """
         </form>
         <span id='progress'>
         </span>
+        <p>
+            <img id="metric_image" width="360" />
+        </p>
         <ul id='messages'>
         </ul>
         <script>
             var client_id = Date.now()
             document.querySelector("#ws-id").textContent = client_id;
-            var ws = new WebSocket(`ws://maichine:8555/ws/watchtrain/consumer/${client_id}`);
+            var ws = new WebSocket(`ws://maichine:8555/ws/watchtrain/verbose/${client_id}`);
+            var metric_image = document.getElementById('metric_image');
             ws.onmessage = function(event) {
                 var data = JSON.parse(event.data);
-                if (data.action == 'training progress') {
+                if (data.action == 'training_progress') {
                     document.querySelector("#progress").textContent = 'Epoch: ' + data.payload['epoch_iter'] + '/' + data.payload['epoch_total'] +
                                                                       ' | Batch (' + data.payload['task'] + '): ' + data.payload['batch_iter'] + '/' + data.payload['batch_total']
+                } else if (data.action == 'metric_image'){
+                
+                    metric_image.src = "data:image/png;charset=utf-8;base64, " + data.image;
+
                 }
                 else{
                     var messages = document.getElementById('messages')
@@ -85,7 +93,7 @@ html = """
     </body>
 </html>
 """
-
+ 
 @app.get("/")
 async def get():
     return HTMLResponse(html)
@@ -113,7 +121,7 @@ async def get(topic_name: str):
 async def websocket_endpoint(websocket: WebSocket, topic_name: str, agent: str, client_id: int):
     global topic
     
-    assert agent in ['producer', 'consumer']
+    assert agent in ['producer', 'verbose', 'watch']
     
     if topic_name == 'watchtrain':
         
@@ -124,6 +132,8 @@ async def websocket_endpoint(websocket: WebSocket, topic_name: str, agent: str, 
         # register producer or consumer
         if agent == 'producer':
             agent = TrainDataProducerAgent(websocket, client_id)
+        elif agent == 'watch':
+            agent = WatchConsumerAgent(websocket, client_id)
         else:
             agent = VerboseConsumerAgent(websocket, client_id, verbose = 1)            
         

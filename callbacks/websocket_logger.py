@@ -94,7 +94,7 @@ class WebsocketLogger(Callback):
     
     
     def _send_train_progress(self):
-        self.ws.send(json.dumps({'action': 'training progress', 
+        self.ws.send(json.dumps({'action': 'training_progress', 
                                     'training_id': self.training_id, 
                                     'payload': {'epoch_iter': self.epoch+1, 
                                                 'epoch_total': self.n_epoch,

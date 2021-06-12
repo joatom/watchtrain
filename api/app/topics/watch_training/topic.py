@@ -1,5 +1,9 @@
 import json
 import pandas as pd
+import base64
+
+import seaborn as sns
+from matplotlib import pyplot as plt
 
 from app.topics.topic import Topic
 from app.utils import Sequence
@@ -12,6 +16,7 @@ class WatchTrainingTopic(Topic):
         self.seq_training_id = Sequence(0)
         self.latest_training_id = self.seq_training_id.curval()
         
+    
     def new_training(self, force_training_id = None):
         
         # if API-Server got restarted and training is still running. A given training_id can be used to continue tracking.
@@ -22,7 +27,8 @@ class WatchTrainingTopic(Topic):
             self.latest_training_id = self.seq_training_id.nextval()
         
         self.trainings[self.latest_training_id] = _Training(self.latest_training_id)
-        
+    
+    
     def summary(self, training_id = None):
         
         if training_id == None:
@@ -43,6 +49,21 @@ class WatchTrainingTopic(Topic):
                 summary = stats.to_dict('index') # to_json(orient="index", double_precision=6) #orient="records"
         
         return json.dumps({'summary': summary}, indent = 2)
+    
+    
+    def metric_image(self, training_id = None):
+        
+        if training_id == None:
+            training_id = self.latest_training_id
+        
+        try:
+            with open(f'./app/img/metrics_{training_id}.png', "rb") as img:
+                img64 = base64.b64encode(img.read()).decode('utf-8')
+        except:
+            with open(f'./app/img/black.png', "rb") as img:
+                img64 = base64.b64encode(img.read()).decode('utf-8')
+                
+        return json.dumps({'action': 'metric_image', 'image': img64}, indent = 2)
         
         
 class _Training():
@@ -60,10 +81,47 @@ class _Training():
             self.stats = pd.DataFrame(data, index=[0])#, orient='index', columns = data.keys())
         else:
             self.stats = self.stats.append(pd.DataFrame(data, index=[0])).reset_index(drop = True)
-                
+
+        # generate metrics image
+        self._gen_metrics_image()
+        
+        
     def add_config(self, data):
         self.config = _TrainingConfig.fromJson(data)
 
+    
+    def _gen_metrics_image(self):
+            stats = self.stats
+                        
+            stats = pd.melt(stats[['epoch'] + self.metrics], id_vars=['epoch'], value_vars = self.metrics)
+            stats.columns = ['epoch','Metric','value']
+
+            sns.set(rc={'axes.facecolor':'black', 
+                        'figure.facecolor':'black',
+                        'patch.linewidth': 0.0,
+                        'text.color': '1',
+                        'axes.edgecolor': 'black',
+                        'figure.figsize':(7, 7)            
+                       })
+
+            fig, ax = plt.subplots()
+
+            g=sns.lineplot(x='epoch', y='value',
+                         hue='Metric',
+                         data=stats,
+                         linewidth = 5,
+                         legend = False, 
+                         marker="o", 
+                         ax=ax
+                         )
+
+            g.set(xticks=[])
+            g.set(yticks=[]) 
+            g.set(xlabel='') 
+            g.set(ylabel='')
+
+            fig.savefig(f'app/img/metrics_{self.training_id}.png')
+            
         
 """class _TrainingStats():
     
