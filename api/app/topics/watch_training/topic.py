@@ -51,7 +51,7 @@ class WatchTrainingTopic(Topic):
         return json.dumps({'summary': summary}, indent = 2)
     
     
-    def metric_image(self, training_id = None):
+    def metric_image(self, training_id = None, epoch = 0):
         
         if training_id == None:
             training_id = self.latest_training_id
@@ -63,7 +63,7 @@ class WatchTrainingTopic(Topic):
             with open(f'./app/img/black.png', "rb") as img:
                 img64 = base64.b64encode(img.read()).decode('utf-8')
                 
-        return json.dumps({'action': 'metric_image', 'image': img64}, indent = 2)
+        return json.dumps({'action': 'metric_image', 'training_id': training_id, 'epoch' : epoch, 'image': img64}, indent = 2)
         
         
 class _Training():
@@ -120,7 +120,9 @@ class _Training():
             g.set(xlabel='') 
             g.set(ylabel='')
 
-            fig.savefig(f'app/img/metrics_{self.training_id}.png')
+            # fix size to 336x336
+            fig.set_size_inches(3, 3)
+            fig.savefig(f'app/img/metrics_{self.training_id}.png', dpi = 112)
             
         
 """class _TrainingStats():

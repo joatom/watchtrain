@@ -1,0 +1,64 @@
+
+import { inbox } from "file-transfer"
+import document from "document";
+
+let catim = document.getElementById("catim");
+//img.href = "another-image.jpg";
+
+function processAllFiles() {
+  let fileName;
+  while (fileName = inbox.nextFile()) {
+    console.log(`/private/data/${fileName} is now available`);
+    
+    catim.href = `/private/data/${fileName}`
+    
+    console.log(`jeladen`);
+  }
+}
+inbox.addEventListener("newfile", processAllFiles);
+processAllFiles();
+
+
+
+
+
+
+
+
+
+
+import { outbox } from "file-transfer"
+import { Image } from "image";
+
+let srcImage = "http://192.168.0.47:8555/img";
+//let srcImage = "https://placekitten.com/336/336";
+let destFilename = "kitten.jpg";
+console.log(`los gehts`)
+
+/*
+// Fetch the image from the internet
+fetch(srcImage).then(function (response) {
+  return response.arrayBuffer();
+}).then(data => {
+  outbox.enqueue(destFilename, data).then(ft => {
+    console.log(`Transfer of '${destFilename}' successfully queued.`);
+  }).catch(err => {
+    throw new Error(`Failed to queue '${destFilename}'. Error: ${err}`);
+  });
+}).catch(err => {
+  console.error(`Failure: ${err}`);
+});
+*/
+
+fetch(srcImage)
+  .then(response => response.arrayBuffer())
+  .then(buffer => Image.from(buffer, "image/png"))
+  .then(image =>
+    image.export("image/jpeg", {
+      background: "#FFFFFF"
+    })
+  )
+  .then(buffer => outbox.enqueue(destFilename, buffer))
+  .then(fileTransfer => {
+    console.log(`Enqueued ${fileTransfer.name}`);
+  });

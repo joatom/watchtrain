@@ -1,0 +1,8 @@
+<svg>
+  
+  <image id="metric_img" href="metrics_1.jpg" />
+  <text id="epoch" />
+  <text id="batch" />
+  
+  <!--text id="catxt" fill="red" font-family="System-Regular">Hello TT World!</text -->
+</svg>

@@ -19,7 +19,15 @@ async def root():
 
 @app.get("/img")
 async def main():
-    return FileResponse("/app/img/336_my.jpg", media_type="image/jpeg")
+    print("Im request")
+    return FileResponse("/app/img/metrics_1.png", media_type="image/png") #"image/jpeg"
+
+
+@app.get("/{training_id}/img/{img_cat}")
+async def img(training_id, img_cat):
+    #return FileResponse("/app/img/336.jpg") #, media_type="image/jpeg")
+    
+    return FileResponse(f"/app/img/{img_cat}_{training_id}.png", media_type="image/png")
 
 
 @app.get("/epochs/last")
