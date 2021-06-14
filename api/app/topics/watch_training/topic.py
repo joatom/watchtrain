@@ -73,6 +73,7 @@ class _Training():
         self.stats = None
         self.config = None
         self.metrics = None
+        self.metrics_label = None
         
     def add_stats(self, data):
         
@@ -81,7 +82,9 @@ class _Training():
             self.stats = pd.DataFrame(data, index=[0])#, orient='index', columns = data.keys())
         else:
             self.stats = self.stats.append(pd.DataFrame(data, index=[0])).reset_index(drop = True)
-
+        
+        self.metrics_label = [f'{metric.split("_")[0]} ({val: .5f})' for (metric, val) in data.items() if metric not in (['training_id', 'epoch', 'train_loss', 'valid_loss', 'time'])]
+            
         # generate metrics image
         self._gen_metrics_image()
         
@@ -91,26 +94,27 @@ class _Training():
 
     
     def _gen_metrics_image(self):
-            stats = self.stats
+            stats = self.stats[['epoch'] + self.metrics]
+            stats.columns = ['epoch'] + self.metrics_label            
                         
-            stats = pd.melt(stats[['epoch'] + self.metrics], id_vars=['epoch'], value_vars = self.metrics)
-            stats.columns = ['epoch','Metric','value']
+            stats = pd.melt(stats[['epoch'] + self.metrics_label], id_vars=['epoch'], value_vars = self.metrics_label)
+            stats.columns = ['epoch','Metrics','value']
 
             sns.set(rc={'axes.facecolor':'black', 
                         'figure.facecolor':'black',
                         'patch.linewidth': 0.0,
                         'text.color': '1',
                         'axes.edgecolor': 'black',
-                        'figure.figsize':(7, 7)            
+                        'figure.figsize':(3, 3)
                        })
 
             fig, ax = plt.subplots()
 
             g=sns.lineplot(x='epoch', y='value',
-                         hue='Metric',
+                         hue='Metrics',
                          data=stats,
-                         linewidth = 5,
-                         legend = False, 
+                         linewidth = 4,
+                         #legend = False, 
                          marker="o", 
                          ax=ax
                          )
@@ -119,37 +123,26 @@ class _Training():
             g.set(yticks=[]) 
             g.set(xlabel='') 
             g.set(ylabel='')
-
+            
+            # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
+            fig.tight_layout(pad=1.08, rect=(0, 0.02 + 0.06 * len(self.metrics_label), 1, 0.9))
+            
+            fig.get_axes()[0].legend(loc='lower center', 
+                                     #loc='best', 
+                                     bbox_to_anchor=(0.5, -0.15 * len(self.metrics_label)),
+                                     fontsize = 10, 
+                                     handlelength = 0,
+                                     handletextpad = -2,
+                                     #facecolor='white',
+                                     #framealpha = 0.2, 
+                                     labelcolor = 'linecolor'
+                                    ) 
+            
             # fix size to 336x336
             fig.set_size_inches(3, 3)
             fig.savefig(f'app/img/metrics_{self.training_id}.png', dpi = 112)
             
         
-"""class _TrainingStats():
-    
-    def __init__(self, epoch = None, train_loss = None, valid_loss = None, metrics = None, time = None):
-        self.epoch = epoch
-        self.train_loss = train_loss
-        self.valid_loss = valid_loss
-        self.metrics = metrics
-        self.time = time
-
-    @classmethod
-    def fromDict(cls, data):
-        #data = json.loads(data)
-        
-        #metrics = {metric:val for (metric, val) in data.items() if metric not in (['training_id', 'epoch', 'train_loss', 'valid_loss', 'time'])}
-        training_id = data.pop('training_id')
-        epoch = data.pop('epoch')
-        train_loss = data.pop('train_loss')
-        valid_loss = data.pop('valid_loss')
-        time = data.pop('time')
-        
-        #remaining data is metrics
-        metrics = data
-        
-        return cls(epoch = epoch, train_loss = train_loss, valid_loss = valid_loss, metrics = metrics, time = time)
-"""
 
 class _TrainingConfig():
     
