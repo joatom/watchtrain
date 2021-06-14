@@ -5,6 +5,15 @@ import fs from "fs";
 let epochText = document.getElementById("epoch");
 let batchText = document.getElementById("batch");
 let metricImg = document.getElementById("metric_img");
+
+let epochProg = document.getElementById("epoch_prog");
+let batchProgT = document.getElementById("batch_prog_t");
+let batchProgV = document.getElementById("batch_prog_v");
+
+let epochProgLength = 336
+let batchProgTLength = 268
+let batchProgVLength = 66
+
 epochText.text = "Waiting...";
 
 
@@ -48,6 +57,16 @@ function processAllFiles() {
             console.log(`Received File: <${fileName}> ${data.training_id}`); 
             epochText.text = `Epoch: ${data.payload.epoch_iter}/${data.payload.epoch_total}`;
             batchText.text = `Batch (${data.payload.task}): ${data.payload.batch_iter}/${data.payload.batch_total}`;
+            epochProg.width = (epochProgLength / data.payload.epoch_total) * (data.payload.epoch_iter)
+            if (data.payload.task == 'train'){
+              batchProgV.width = 0
+              batchProgT.width = (batchProgTLength / data.payload.batch_total) * (data.payload.batch_iter + 1)
+            }
+            else{
+              batchProgT.width = batchProgTLength
+              batchProgV.width = (batchProgVLength / data.payload.batch_total) * (data.payload.batch_iter + 1)
+            }
+            
             break;
           case 'new_stats':
             console.log(`inIF Received File: <${fileName}> ${data.training_id}`); 
