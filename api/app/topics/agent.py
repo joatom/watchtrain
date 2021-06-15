@@ -11,5 +11,4 @@ class Agent(ABC):
             
     @abstractmethod
     def handle_request(self, data):
-        pass         
-    
+        pass

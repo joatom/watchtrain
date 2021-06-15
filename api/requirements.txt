@@ -2,3 +2,4 @@ aiofiles
 websockets
 pandas
 seaborn
+jinja2

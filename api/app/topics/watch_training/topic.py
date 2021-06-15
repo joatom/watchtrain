@@ -51,16 +51,35 @@ class WatchTrainingTopic(Topic):
         return json.dumps({'summary': summary}, indent = 2)
     
     
-    def metric_image(self, training_id = None, epoch = 0):
+    def training_progress(self, training_id = None):
         
         if training_id == None:
             training_id = self.latest_training_id
+
+        return json.dumps(
+            {'action': 'training_progress', 
+             'training_id': training_id, 
+             'payload': {'epoch_iter': 0, 
+                         'epoch_total': 10, 
+                         'batch_iter': 0, 
+                         'batch_total': 10, 
+                         'task': 'train'}})
+
+    
+    def metric_image(self, training_id = None, epoch = None):
+        
+        if training_id == None:
+            training_id = self.latest_training_id
+            
+            if epoch == None:
+                training = self.trainings.get(training_id)
+                training.stats.epoch.max().values()
         
         try:
             with open(f'./app/img/metrics_{training_id}.png', "rb") as img:
                 img64 = base64.b64encode(img.read()).decode('utf-8')
         except:
-            with open(f'./app/img/black.png', "rb") as img:
+            with open(f'./app/img/plain.png', "rb") as img:
                 img64 = base64.b64encode(img.read()).decode('utf-8')
                 
         return json.dumps({'action': 'metric_image', 'training_id': training_id, 'epoch' : epoch, 'image': img64}, indent = 2)

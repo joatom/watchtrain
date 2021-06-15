@@ -1,9 +1,8 @@
-from typing import Optional
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse
+
 import pandas as pd
 import json
-import time
 
 import app.topics.topic as tp
 import app.topics.watch_training.topic as wt_topic
@@ -11,41 +10,6 @@ from app.topics.watch_training.producer_agent import TrainDataProducerAgent
 from app.topics.watch_training.consumer_agent import VerboseConsumerAgent, WatchConsumerAgent
 
 app = FastAPI()
-
-@app.get("/hello")
-async def root():
-    return {"message": "Hello xJT World"}
-
-
-@app.get("/img")
-async def main():
-    print("Im request")
-    return FileResponse("/app/img/metrics_1.png", media_type="image/png") #"image/jpeg"
-
-
-@app.get("/{training_id}/img/{img_cat}")
-async def img(training_id, img_cat):
-    #return FileResponse("/app/img/336.jpg") #, media_type="image/jpeg")
-    
-    return FileResponse(f"/app/img/{img_cat}_{training_id}.png", media_type="image/png")
-
-
-@app.get("/epochs/last")
-async def last_epoch():
-    return {"epoch": 10}
-
-@app.get("/epochs/{epoch_id: int}")
-async def epoch_by_id(epoch_id):
-    return {"epoch": epoch_id}
-
-#@app.get("/epochs/")
-#async def epoch_range(from: int = 0, to: Optional[int] = None):
-#    if to:
-#        r = range(from, to)
-#    else: 
-#        r = range(10)
-#    
-#    return {"epochs": [{"epoch_id": e} for e in e]}
 
 
 html = """
@@ -101,6 +65,7 @@ html = """
     </body>
 </html>
 """
+
  
 @app.get("/")
 async def get():
@@ -147,7 +112,8 @@ async def websocket_endpoint(websocket: WebSocket, topic_name: str, agent: str, 
         
         # connect
         await topic[topic_name].connect(agent)
-
+        await agent.handle_request(json.dumps({'action': 'connected'}), topic[topic_name])
+        
         # handle incoming data
         try:
             while True:
@@ -163,3 +129,14 @@ async def websocket_endpoint(websocket: WebSocket, topic_name: str, agent: str, 
         raise ValueError(f'Topic *{topic_name}* not implemented')
 
         
+
+@app.get("/img")
+async def main():
+    print("Im request")
+    return FileResponse("/app/img/metrics_1.png", media_type="image/png") 
+
+
+@app.get("/{training_id}/img/{img_cat}")
+async def img(training_id, img_cat):
+    return FileResponse(f"/app/img/{img_cat}_{training_id}.png", media_type="image/png")
+
