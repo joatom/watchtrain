@@ -73,7 +73,10 @@ class WatchTrainingTopic(Topic):
             
             if epoch == None:
                 training = self.trainings.get(training_id)
-                training.stats.epoch.max().values()
+                if training.stats == None:
+                    epoch = 0
+                else:
+                    epoch = training.stats.epoch.max().values()
         
         try:
             with open(f'./app/img/metrics_{training_id}.png', "rb") as img:

@@ -14,16 +14,19 @@ class TrainDataProducerAgent(ProducerAgent):
         print(f'producer #{self.client_id}: {data}')
         
         
-        if data['action'] == 'Requesting training_id':
+        if data['action'] == 'register_training':
             
             topic.new_training()
-            await self.websocket.send_text(json.dumps({'training_id': topic.latest_training_id}))
+            await self.websocket.send_text(json.dumps({'training_id': topic.latest_training_id, 'force_training_id': data['training_id']}))
+            
+            # Broadcast metric image if broken connection is resumed or new training has been initialized
+            await topic.consumer_manager.broadcast(topic.metric_image(training_id = data['training_id']))
             
             # Verbose
             await topic.consumer_manager.broadcast(f'New Training with ID {topic.latest_training_id} just started ...', verbose = 1)
             
             
-        if data['action'] == 'training stats':
+        if data['action'] == 'training_stats':
         
             stats = data['payload']
             

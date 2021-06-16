@@ -9,13 +9,13 @@ import app.topics.watch_training.topic as wt_topic
 from app.topics.watch_training.producer_agent import TrainDataProducerAgent
 from app.topics.watch_training.consumer_agent import VerboseConsumerAgent, WatchConsumerAgent
 
-app = FastAPI()
+app = FastAPI() 
 
 
-html = """
+html = """ 
 <!DOCTYPE html>
-<html>
-    <head>
+<html> 
+    <head> 
         <title>Chat</title>
     </head>
     <body>
@@ -99,7 +99,7 @@ async def websocket_endpoint(websocket: WebSocket, topic_name: str, agent: str, 
     if topic_name == 'watchtrain':
         
         # init topic if not exists
-        if topic.get(topic_name) == None:
+        if topic.get(topic_name) == None: 
             topic[topic_name] = wt_topic.WatchTrainingTopic()
         
         # register producer or consumer
@@ -126,7 +126,7 @@ async def websocket_endpoint(websocket: WebSocket, topic_name: str, agent: str, 
             topic[topic_name].disconnect(agent)
 
     else:
-        raise ValueError(f'Topic *{topic_name}* not implemented')
+        raise ValueError(f'Topic *{topic_name}* not implemented') 
 
         
 

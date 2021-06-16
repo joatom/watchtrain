@@ -22,11 +22,14 @@ class WebsocketLogger(Callback):
         self.conn = conn
         self.params = params
         
+        # connect via websocket and recieve trainning id
+        
         #websocket.enableTrace(True)
         
+        self.heartbeat = False
         self._ws_connect()
         
-        self.training_id = self._req_training_id()
+        self.training_id = self._register_training()
     
     
     ############    
@@ -52,7 +55,7 @@ class WebsocketLogger(Callback):
     def before_fit(self):
         "Prepare file with metric names."
         if hasattr(self, "gather_preds"): return
-        self.ws.send(json.dumps({'action': 'debug', 'value':'BEFORE FIT'}))
+        self._send(json.dumps({'action': 'debug', 'value':'BEFORE FIT'}))
         self.data = {}
         self.columns = ['training_id'] + list(self.recorder.metric_names)
         
@@ -62,7 +65,7 @@ class WebsocketLogger(Callback):
     def after_fit(self):
         "Close the file and clean up."
         if hasattr(self, "gather_preds"): return
-        self.ws.send(json.dumps({'action': 'debug', 'value':'AFTER FIT'}))
+        self._send(json.dumps({'action': 'debug', 'value':'AFTER FIT'}))
         self.learn.logger = self.old_logger
         
         self.ws.close()
@@ -83,7 +86,7 @@ class WebsocketLogger(Callback):
         # log[0] is the epoch number
         self.data[log[0]] = dict(zip(self.columns, [self.training_id] + list(log)))
         
-        self.ws.send(json.dumps({'action': 'training stats', 'training_id': self.training_id, 'payload': self.data[log[0]]}, indent = 2))
+        self._send(json.dumps({'action': 'training_stats', 'training_id': self.training_id, 'payload': self.data[log[0]]}, indent = 2), force = True)
         
         self.old_logger(log)
 
@@ -93,8 +96,27 @@ class WebsocketLogger(Callback):
     #####################    
     
     
+    def _send(self, data, force = False):
+        if self.heartbeat:
+            try:
+                self.ws.send(data)
+            except:
+                # reconnect if connection is temporary lost
+                self._ws_connect()
+                self.ws.send(data)
+        else:
+            if force:
+                try:
+                    # reconnect if connection is lost
+                    self._ws_connect()
+                    _ = self._register_training(self.training_id)
+                    self.ws.send(data)
+                except:
+                    print('Could not force reconnection with APIServer.')
+            
+    
     def _send_train_progress(self):
-        self.ws.send(json.dumps({'action': 'training_progress', 
+        self._send(json.dumps({'action': 'training_progress', 
                                     'training_id': self.training_id, 
                                     'payload': {'epoch_iter': self.epoch+1, 
                                                 'epoch_total': self.n_epoch,
@@ -103,11 +125,11 @@ class WebsocketLogger(Callback):
                                                 'task': self.task}}, indent = 2))
 
     
-    def _req_training_id(self):
+    def _register_training(self, training_id = None):
         
-        msg = json.dumps({'action': 'Requesting training_id', 'training_id': '', 'payload': ''}, indent = 2)
+        msg = json.dumps({'action': 'register_training', 'training_id': training_id, 'payload': ''}, indent = 2)
         
-        self.ws.send(msg)
+        self._send(msg)
         
         data = self.ws.sock.recv()
         
@@ -125,13 +147,17 @@ class WebsocketLogger(Callback):
         print('Websocket error:',error)
 
     def _on_ws_close(self,ws, close_status_code, close_msg):
+        self.heartbeat = False
         print('Websocket connection closed.')
 
     def _on_ws_open(self,ws):
         # ws connection is now ready => unlock
         self.ws_ready_lock.release()
+        self.heartbeat = True
         
     def _ws_connect(self):
+        
+        self.heartbeat = False
         
         # aquire lock until websocket is ready to use
         self.ws_ready_lock = threading.Lock()
@@ -148,8 +174,9 @@ class WebsocketLogger(Callback):
         # run websocket in background
         thread.start_new_thread(self.ws.run_forever, ())
         
-        # wait for websocket to be initialized
-        self.ws_ready_lock.acquire()
+        # wait for websocket to be initialized, 
+        # if not connection is not possible (e.g. APIServer is down) resume after 3 sec, but heartbeat stays FALSE
+        self.ws_ready_lock.acquire(timeout = 3)
         
         print('... websocket connected.')
         
