@@ -16,13 +16,13 @@ html = """
 <!DOCTYPE html>
 <html> 
     <head> 
-        <title>Chat</title>
+        <title>Watchtrain</title>
     </head>
-    <body>
-        <h1>Verbose Consumer</h1>
-        <h2>Your ID: <span id="ws-id"></span></h2>
+    <body style="background-color:black; color:white;">
+        <h1>Watchtrain Web (Verbose/Debug)</h1>
+        <!-- Your ID: <span id="ws-id"></span> -->
         <form action="" onsubmit="sendMessage(event)">
-            Debug message: <input type="text" id="messageText" autocomplete="off"/>
+            Debug message: <input type="text" id="messageText" autocomplete="off" style="background-color:lightgray; color:black;"/>
             <button>Send</button>
         </form>
         <span id='progress'>
@@ -34,7 +34,7 @@ html = """
         </ul>
         <script>
             var client_id = Date.now()
-            document.querySelector("#ws-id").textContent = client_id;
+            // document.querySelector("#ws-id").textContent = client_id;
             var ws = new WebSocket(`ws://maichine:8555/ws/watchtrain/verbose/${client_id}`);
             var metric_image = document.getElementById('metric_image');
             ws.onmessage = function(event) {
