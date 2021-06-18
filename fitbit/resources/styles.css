@@ -1,20 +1,8 @@
-#status {
-  font-size: 18;
-  font-family: System-Regular;
-  font-weight: regular;
-  x: 10;
-  y: 50%;
-  width: 95%;
-  height: 100%;
-  fill: white;
-  text-length: 64;
-}
-
 #epoch {
   font-size: 20;
   font-family: System-Regular;
   font-weight: regular;
-  x: 35%;
+  x: 25%;
   y: 18;
   width: 95%;
   height: 100%;

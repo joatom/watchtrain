@@ -175,7 +175,7 @@ class WebsocketLogger(Callback):
         thread.start_new_thread(self.ws.run_forever, ())
         
         # wait for websocket to be initialized, 
-        # if not connection is not possible (e.g. APIServer is down) resume after 3 sec, but heartbeat stays FALSE
+        # if connection is not possible (e.g. APIServer is down) resume after 3 sec, but heartbeat stays FALSE
         self.ws_ready_lock.acquire(timeout = 3)
         
         print('... websocket connected.')
