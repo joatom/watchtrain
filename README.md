@@ -4,7 +4,7 @@
 This repository contains code to stream ML training progress (currently only fastai) to a Fitbit Versa 3. 
 
 <p align="left">
-  <img src="docs/assets/img/logo_watchtrain1.jpg?raw=true" width="400" title="ML watchtrain">
+  <img src="docs/assets/img/logo_watchtrain1.png?raw=true" width="400" title="ML watchtrain">
 </p>
 
 The project consists of three components, which can be found in the respective folders:
