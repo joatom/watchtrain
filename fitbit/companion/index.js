@@ -1,48 +1,21 @@
 import { outbox } from "file-transfer";
 // https://dev.fitbit.com/blog/2018-05-09-introducing-the-imagepicker-and-image-api/
 import { Image } from "image";
-import { device } from "peer";
-import { settingsStorage } from "settings";
-
-settingsStorage.setItem("screenWidth", device.screen.width);
-settingsStorage.setItem("screenHeight", device.screen.height);
-
-function sendDataToDevice(action, data, ext) {
-  console.log(`COMP Sending ${action}.${ext}...`);
-  switch(ext){
-    case 'json':
-      var enc = new TextEncoder();
-      outbox.enqueue(`${action}.${ext}`, enc.encode(data));
-      break;
-    case 'jpg':
-      var img = Image.from(data.image);
-      
-      // "image/vnd.fitbit.txi" or "image/jpeg"
-      var buffer = img.export("image/vnd.fitbit.txi" , {
-                                          background: "#FFFFFF",
-                                          quality: 40
-                                        });
-      outbox.enqueue(`${action}.${ext}`, buffer);
-      break;
-  }
-}
-
-
-
-//setTimeout(sendFile, 2000);
 
 const trainUri = "http://192.168.0.47:8555"
 const wsUri = "ws://192.168.0.47:8555/ws/watchtrain/watch/123"; //
 const websocket = new WebSocket(wsUri);
 
-websocket.addEventListener("open", onOpen);
-websocket.addEventListener("close", onClose);
-websocket.addEventListener("message", onMessage);
-websocket.addEventListener("error", onError);
+
+
+function sendJsonToDevice(action, data) {
+  console.log(`COMP Sending ${action}.json...`);
+  var enc = new TextEncoder();
+  outbox.enqueue(`${action}.json`, enc.encode(data));
+}
 
 function onOpen(evt) {
    console.log("CONNECTED");
-   //websocket.send('msg');
 }
 
 function onClose(evt) {
@@ -55,11 +28,14 @@ function onMessage(evt) {
   
   switch(action){
     case 'training_progress':
-      sendDataToDevice(action, evt.data,'json')
+      sendJsonToDevice(action, evt.data)
+      break;
+    
+    case 'training_stats':
+      sendJsonToDevice(action, evt.data)
       break;
       
     case 'metric_image':
-      //sendDataToDevice(action, data, 'jpg')
       
       Image.from(`data:image/png;charset=utf-8;base64, ${data.image}`)
       .then(image =>
@@ -70,26 +46,20 @@ function onMessage(evt) {
       )
       .then(buffer => outbox.enqueue(`${action}_${data.training_id}_${data.epoch}.jpg`, buffer))
       .then(fileTransfer => {
-        console.error(`Enqueued ${fileTransfer.name}`);
+        console.log(`Enqueued ${fileTransfer.name}`);
       });
       
       break;
         
-    /*case 'new_stats':
-      console.error(`##### ${trainUri}/${data.training_id}/img/metrics`)
-      fetch(`${trainUri}/${data.training_id}/img/metrics`).then(function (response) {
-        return response.arrayBuffer();
-      }).then(img => {
-        sendDataToDevice(`metrics_${data.training_id}`, img,'png')
-      }).catch(err => {
-        console.error(`Failure: ${err}`);
-      });
-      
-      break;
-    */
   }
 }
 
 function onError(evt) {
    console.error(`ERROR: ${evt.data}`);
 }
+
+
+websocket.addEventListener("open", onOpen);
+websocket.addEventListener("close", onClose);
+websocket.addEventListener("message", onMessage);
+websocket.addEventListener("error", onError);

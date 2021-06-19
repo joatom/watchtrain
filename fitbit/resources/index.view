@@ -1,9 +1,13 @@
 <svg>
-  
+
   <image id="metric_img" href="metrics_1.jpg" />
+  
+  <!-- progressbar background -->
   <rect x="0" y="0" width="366" height = "25" fill = "lightgray" opacity= "0.3" />
   <rect x="0" y="28" width="268" height = "22" fill = "seashell" opacity= "0.3" />
   <rect x="270" y="28" width="66" height = "22" fill = "lightyellow" opacity= "0.3" />
+  
+  <!--  moving progressbar -->
   <rect id="epoch_prog" x="0" y="0" width="0" height = "25" fill = "linen" opacity= "0.3" />
   <rect id="batch_prog_t" x="0" y="28" width="0" height = "22" fill = "papayawhip" opacity= "0.3" />
   <rect id="batch_prog_v" x="270" y="28" width="0" height = "22" fill = "moccasin" opacity= "0.3" />
@@ -11,5 +15,5 @@
   <text id="epoch" />
   <text id="batch" />
   
-  <!--text id="catxt" fill="red" font-family="System-Regular">Hello TT World!</text -->
+
 </svg>

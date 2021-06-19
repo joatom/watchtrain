@@ -46,7 +46,7 @@ class WatchTrainingTopic(Topic):
             if not isinstance(stats,pd.DataFrame):
                 summary = f'No statistics for training # {training_id} available, yet.'
             else:
-                summary = stats.to_dict('index') # to_json(orient="index", double_precision=6) #orient="records"
+                summary = stats.to_dict('index')
         
         return json.dumps({'summary': summary}, indent = 2)
     
@@ -68,23 +68,29 @@ class WatchTrainingTopic(Topic):
     
     def metric_image(self, training_id = None, epoch = None):
         
+        img_name = './app/img/plain.png'
+        
         if training_id == None:
             training_id = self.latest_training_id
-            
-            if epoch == None:
-                training = self.trainings.get(training_id)
-                if training.stats == None:
-                    epoch = 0
-                else:
-                    epoch = training.stats.epoch.max().values()
-        
+
+        # only fetch image if training stats are available
         try:
-            with open(f'./app/img/metrics_{training_id}.png', "rb") as img:
+            stats = self.trainings.get(training_id).stats
+            if epoch == None:
+                epoch = stats.epoch.max().values()
+            img_name = f'./app/img/metrics_{training_id}.png'
+        except:
+            img_name = './app/img/plain.png'
+            if epoch == None:
+                epcoh = 0
+            
+        try:
+            with open(img_name, "rb") as img:
                 img64 = base64.b64encode(img.read()).decode('utf-8')
         except:
             with open(f'./app/img/plain.png', "rb") as img:
                 img64 = base64.b64encode(img.read()).decode('utf-8')
-                
+        
         return json.dumps({'action': 'metric_image', 'training_id': training_id, 'epoch' : epoch, 'image': img64}, indent = 2)
         
         
@@ -101,7 +107,7 @@ class _Training():
         
         if not isinstance(self.stats, pd.DataFrame):
             self.metrics = [metric for (metric, val) in data.items() if metric not in (['training_id', 'epoch', 'train_loss', 'valid_loss', 'time'])]
-            self.stats = pd.DataFrame(data, index=[0])#, orient='index', columns = data.keys())
+            self.stats = pd.DataFrame(data, index=[0])
         else:
             self.stats = self.stats.append(pd.DataFrame(data, index=[0])).reset_index(drop = True)
         
@@ -163,7 +169,7 @@ class _Training():
             # fix size to 336x336
             fig.set_size_inches(3, 3)
             fig.savefig(f'app/img/metrics_{self.training_id}.png', dpi = 112)
-            
+            plt.close()
         
 
 class _TrainingConfig():
